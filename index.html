@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Dokumen Pembelajaran</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<!-- Navbar -->
+<nav class="bg-blue-600 text-white p-4 shadow">
+  <div class="container mx-auto flex justify-between items-center">
+    <h1 class="text-lg font-bold">Sistem Pembelajaran</h1>
+    <ul class="flex space-x-6">
+      <li><a href="index.html" class="hover:underline">Aploud Data</a></li>
+      <li><a href="guru.html" class="hover:underline">Daftar Guru</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Konten -->
+<div class="p-6">
+  <h2 class="text-2xl font-bold mb-4">Upload Dokumen Pembelajaran</h2>
+
+  <!-- Pilih guru -->
+  <div class="mb-4">
+    <label class="block mb-2 font-semibold">Pilih Guru:</label>
+    <select id="guruSelect" class="border p-2 w-full"></select>
+  </div>
+
+  <!-- Pilih file -->
+  <div class="mb-4">
+    <label class="block mb-2 font-semibold">Pilih File:</label>
+    <input type="file" id="fileInput" class="border p-2 w-full" />
+  </div>
+
+  <button onclick="uploadFile()" class="bg-blue-500 text-white px-4 py-2 rounded">Upload</button>
+
+  <!-- Notifikasi -->
+  <div id="notif" class="mt-4 text-green-600 font-semibold hidden"></div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSF_F6WKNWkrnxta1SNW5qMjsDCnJM3ZBcLEhV41hErNkqY2kTL1PE5E9X7MRs1Ad2ew/exec"; // Ganti URL Apps Script
+const notifEl = document.getElementById("notif");
+
+// Ambil daftar guru dari sheet "data"
+fetch(SCRIPT_URL)
+.then(res => res.json())
+.then(data => {
+  const select = document.getElementById("guruSelect");
+  data.forEach(guru => {
+    const option = document.createElement("option");
+    option.value = guru.nama;
+    option.textContent = guru.nama;
+    select.appendChild(option);
+  });
+});
+
+// Upload file
+function uploadFile() {
+  const guru = document.getElementById("guruSelect").value;
+  const fileInput = document.getElementById("fileInput");
+  const file = fileInput.files[0];
+
+  if (!file || !guru) {
+    alert("Pilih guru dan file terlebih dahulu!");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64Data = e.target.result.split(",")[1];
+    const formData = new FormData();
+    formData.append("fileBlob", base64Data);
+    formData.append("fileName", file.name);
+    formData.append("fileType", file.type);
+    formData.append("guru", guru);
+
+    fetch(SCRIPT_URL, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(resp => {
+      if (resp.status === "success") {
+        notifEl.textContent = "File berhasil dikirim!";
+        notifEl.classList.remove("hidden");
+      } else {
+        alert(resp.message);
+      }
+    })
+    .catch(err => alert(err.message));
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+
+</body>
+</html>
